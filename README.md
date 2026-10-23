@@ -22,6 +22,10 @@ Modeled after [`github.com/dracory/shopadmin`](https://github.com/dracory/shopad
 and [`github.com/dracory/blogadmin`](https://github.com/dracory/blogadmin)
 — same folder-per-controller pattern, same `UiConfig`/`UiBase` conventions.
 
+## Preview
+
+![Log Admin Screenshot](example/screenshot.png)
+
 ## Features
 
 - **Log viewing** — paginated table with sortable columns
