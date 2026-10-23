@@ -2,8 +2,6 @@
 
 <img src="https://opengraph.githubassets.com/dracory/logadmin" />
 
-![Log Admin Screenshot](example/screenshot.png)
-
 [![Tests Status](https://github.com/dracory/logadmin/actions/workflows/tests.yml/badge.svg?branch=main)](https://github.com/dracory/logadmin/actions/workflows/tests.yml)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dracory/logadmin)](https://goreportcard.com/report/github.com/dracory/logadmin)
 [![PkgGoDev](https://pkg.go.dev/badge/github.com/dracory/logadmin)](https://pkg.go.dev/github.com/dracory/logadmin)
@@ -23,6 +21,10 @@ application logs.
 Modeled after [`github.com/dracory/shopadmin`](https://github.com/dracory/shopadmin)
 and [`github.com/dracory/blogadmin`](https://github.com/dracory/blogadmin)
 — same folder-per-controller pattern, same `UiConfig`/`UiBase` conventions.
+
+## Preview
+
+![Log Admin Screenshot](example/screenshot.png)
 
 ## Features
 
