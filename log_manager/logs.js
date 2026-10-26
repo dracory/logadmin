@@ -41,7 +41,6 @@ const LogsApp = {
 
       // Selection
       selectedLogs: [],
-      selectAll: false,
 
       // Context modal
       contextLog: null
@@ -69,6 +68,29 @@ const LogsApp = {
       
       if (parts.length === 0) return 'Showing all logs';
       return 'Showing logs with ' + parts.join(', ');
+    },
+
+    /**
+     * Select-all state for the logs on the current page.
+     * Setting it selects/deselects all logs on the current page
+     * while preserving selections on other pages.
+     */
+    selectAll: {
+      get() {
+        return this.logs.length > 0 &&
+               this.logs.every(log => this.selectedLogs.includes(log.id));
+      },
+      set(checked) {
+        const currentPageIds = this.logs.map(log => log.id);
+        if (checked) {
+          const newSelection = new Set(this.selectedLogs);
+          currentPageIds.forEach(id => newSelection.add(id));
+          this.selectedLogs = Array.from(newSelection);
+        } else {
+          const idsToRemove = new Set(currentPageIds);
+          this.selectedLogs = this.selectedLogs.filter(id => !idsToRemove.has(id));
+        }
+      }
     },
 
     /**
@@ -284,7 +306,6 @@ const LogsApp = {
             showConfirmButton: false
           });
           this.selectedLogs = [];
-          this.selectAll = false;
           this.loadLogs();
         } else {
           Swal.fire({
@@ -349,7 +370,6 @@ const LogsApp = {
             showConfirmButton: false
           });
           this.selectedLogs = [];
-          this.selectAll = false;
           this.loadLogs();
         } else {
           Swal.fire({
@@ -475,32 +495,6 @@ const LogsApp = {
       };
       this.currentPage = 0;
       this.applyFilters();
-    },
-
-    /**
-     * Toggles select all logs on the current page.
-     * Uses efficient approach to prevent freezing with large selections.
-     */
-    toggleSelectAll() {
-      if (this.selectAll) {
-        // Use a Set for better performance with large arrays
-        const newSelection = new Set(this.selectedLogs);
-        this.logs.forEach(log => newSelection.add(log.id));
-        this.selectedLogs = Array.from(newSelection);
-      } else {
-        // Remove only current page logs from selection
-        const currentPageIds = new Set(this.logs.map(log => log.id));
-        this.selectedLogs = this.selectedLogs.filter(id => !currentPageIds.has(id));
-      }
-    }
-  },
-
-  watch: {
-    selectedLogs(newVal) {
-      // Only update selectAll if on current page
-      const currentPageIds = new Set(this.logs.map(log => log.id));
-      const selectedOnPage = newVal.filter(id => currentPageIds.has(id));
-      this.selectAll = selectedOnPage.length === this.logs.length && this.logs.length > 0;
     }
   }
 };
