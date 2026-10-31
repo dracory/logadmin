@@ -6,8 +6,8 @@ require (
 	github.com/dracory/api v1.8.0
 	github.com/dracory/cdn v1.13.0
 	github.com/dracory/hb v1.88.0
-	github.com/dracory/logstore v1.23.0
-	github.com/dracory/neat v0.60.1
+	github.com/dracory/logstore v1.23.1
+	github.com/dracory/neat v0.61.0
 	github.com/dracory/req v0.1.0
 	modernc.org/sqlite v1.61.1
 )
