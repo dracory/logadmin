@@ -9,7 +9,7 @@ require (
 	github.com/dracory/logstore v1.23.0
 	github.com/dracory/neat v0.60.1
 	github.com/dracory/req v0.1.0
-	modernc.org/sqlite v1.61.0
+	modernc.org/sqlite v1.61.1
 )
 
 require (
