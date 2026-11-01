@@ -82,7 +82,7 @@ func (u *ui) renderPage(r *http.Request) string {
 		{Name: "Logs", URL: ""},
 	})
 
-	heading := shared.PageHeader("Log Manager")
+	heading := shared.PageHeader("Logs. Log Manager")
 
 	htmlContent, err := logsFiles.ReadFile("logs.html")
 	if err != nil {
