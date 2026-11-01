@@ -9,8 +9,8 @@ import (
 	"github.com/dracory/api"
 	"github.com/dracory/cdn"
 	"github.com/dracory/hb"
-	"github.com/dracory/logstore"
 	"github.com/dracory/logadmin/shared"
+	"github.com/dracory/logstore"
 	"github.com/dracory/neat"
 	"github.com/dracory/req"
 )
@@ -79,10 +79,10 @@ func (u *ui) renderPage(r *http.Request) string {
 
 	breadcrumbs := shared.Breadcrumbs([]shared.Breadcrumb{
 		{Name: "Home", URL: shared.AdminHomeURL(r)},
-		{Name: "Logs", URL: shared.URLR(r, shared.CONTROLLER_LOG_MANAGER, nil)},
+		{Name: "Logs", URL: ""},
 	})
 
-	heading := hb.Heading1().HTML("Log Manager")
+	heading := shared.PageHeader("Log Manager")
 
 	htmlContent, err := logsFiles.ReadFile("logs.html")
 	if err != nil {
@@ -117,10 +117,9 @@ func (u *ui) renderPage(r *http.Request) string {
 		Child(componentScript)
 
 	content := hb.Div().
-		Class("container").
-		Child(heading).
+		Class("container py-4").
 		Child(breadcrumbs).
-		Child(hb.HR()).
+		Child(heading).
 		Child(vueContainer)
 
 	return u.Layout(nil, r, "Log Manager", content.ToHTML(), struct {
