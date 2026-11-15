@@ -20,6 +20,7 @@ import (
 var logsFiles embed.FS
 
 const (
+	actionLoadConfig        = "load-config-ajax"
 	actionLoadLogs          = "load-logs"
 	actionLogDelete         = "delete-log"
 	actionLogDeleteSelected = "delete-selected"
@@ -57,6 +58,8 @@ func (u *ui) Handler(w http.ResponseWriter, r *http.Request) string {
 	action := req.GetStringTrimmed(r, "action")
 
 	switch action {
+	case actionLoadConfig:
+		return u.handleLoadConfig(w, r)
 	case actionLoadLogs:
 		return u.handleLoadLogs(w, r)
 	case actionLogDelete:
@@ -96,15 +99,6 @@ func (u *ui) renderPage(r *http.Request) string {
 		return hb.Div().HTML("Error loading logs component").ToHTML()
 	}
 
-	linksHelper := shared.NewLinksFromRequest(r)
-	initScript := hb.Script(`
-		const urlLogsLoad = '` + linksHelper.LogManager(map[string]string{"action": actionLoadLogs}) + `';
-		const urlLogDelete = '` + linksHelper.LogManager(map[string]string{"action": actionLogDelete}) + `';
-		const urlLogDeleteSelected = '` + linksHelper.LogManager(map[string]string{"action": actionLogDeleteSelected}) + `';
-		const urlLogDeleteAll = '` + linksHelper.LogManager(map[string]string{"action": actionLogDeleteAll}) + `';
-		const urlLogShowContext = '` + linksHelper.LogManager(map[string]string{"action": actionLogShowContext}) + `';
-	`)
-
 	htmlTemplate := hb.Wrap().HTML(string(htmlContent))
 	componentScript := hb.Script(string(jsContent))
 
@@ -113,7 +107,6 @@ func (u *ui) renderPage(r *http.Request) string {
 	vueContainer := hb.Div().
 		Child(vueCDN).
 		Child(htmlTemplate).
-		Child(initScript).
 		Child(componentScript)
 
 	content := hb.Div().
@@ -132,6 +125,24 @@ func (u *ui) renderPage(r *http.Request) string {
 			cdn.Sweetalert2_10(),
 		},
 	})
+}
+
+// handleLoadConfig handles POST ?action=load-config-ajax — returns the
+// endpoint URLs the Vue app needs. Fetching this on mount doubles as a
+// connectivity check before the table loads, and keeps logs.js fully
+// static (no server-interpolated globals).
+func (u *ui) handleLoadConfig(w http.ResponseWriter, r *http.Request) string {
+	linksHelper := shared.NewLinksFromRequest(r)
+
+	return api.SuccessWithData("", map[string]any{
+		"urls": map[string]string{
+			"load":            linksHelper.LogManager(map[string]string{"action": actionLoadLogs}),
+			"delete":          linksHelper.LogManager(map[string]string{"action": actionLogDelete}),
+			"delete_selected": linksHelper.LogManager(map[string]string{"action": actionLogDeleteSelected}),
+			"delete_all":      linksHelper.LogManager(map[string]string{"action": actionLogDeleteAll}),
+			"show_context":    linksHelper.LogManager(map[string]string{"action": actionLogShowContext}),
+		},
+	}).ToString()
 }
 
 func (u *ui) handleLoadLogs(w http.ResponseWriter, r *http.Request) string {
@@ -179,7 +190,17 @@ func (u *ui) handleLoadLogs(w http.ResponseWriter, r *http.Request) string {
 	page := getInt(reqBody.Page, 0)
 	perPage := getInt(reqBody.PerPage, 100)
 	sortOrder := getStringTrimmed(reqBody.SortOrder, neat.SortDesc)
+	// sortBy feeds into ORDER BY, so it must be whitelisted.
 	sortBy := getStringTrimmed(reqBody.SortBy, logstore.COLUMN_TIME)
+	if sortBy != logstore.COLUMN_ID &&
+		sortBy != logstore.COLUMN_TIME &&
+		sortBy != logstore.COLUMN_LEVEL &&
+		sortBy != logstore.COLUMN_MESSAGE {
+		sortBy = logstore.COLUMN_TIME
+	}
+	if sortOrder != neat.SortAsc && sortOrder != neat.SortDesc {
+		sortOrder = neat.SortDesc
+	}
 	level := getStringTrimmed(reqBody.Level, "")
 	searchMessage := getStringTrimmed(reqBody.SearchMessage, "")
 	searchContext := getStringTrimmed(reqBody.SearchContext, "")

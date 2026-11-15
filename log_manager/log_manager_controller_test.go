@@ -319,3 +319,50 @@ func TestLogManagerController_LoadLogsAction(t *testing.T) {
 		t.Error("expected JSON response with logs field")
 	}
 }
+
+func TestLogManagerController_HandleLoadConfig(t *testing.T) {
+	u := newTestUI(t)
+
+	req := httptest.NewRequest(http.MethodPost,
+		"/admin/logs?controller=log-manager&action="+actionLoadConfig, nil)
+	resp := u.Handler(httptest.NewRecorder(), req)
+	if !strings.Contains(resp, `"status":"success"`) &&
+		!strings.Contains(resp, `"status": "success"`) {
+		t.Fatalf("expected success, got %s", resp)
+	}
+	for _, key := range []string{
+		"load", "delete", "delete_selected", "delete_all", "show_context",
+	} {
+		if !strings.Contains(resp, `"`+key+`"`) {
+			t.Errorf("expected %q url in config, got %s", key, resp)
+		}
+	}
+	if !strings.Contains(resp, "controller=log-manager") {
+		t.Errorf("expected controller param preserved in urls, got %s", resp)
+	}
+}
+
+func TestLogManagerController_LoadLogsWhitelistsSortBy(t *testing.T) {
+	u := newTestUI(t)
+	ctx := context.Background()
+	seedLogs(t, u.Store(), ctx)
+
+	// A malicious sort_by must not reach ORDER BY — the request should
+	// still succeed (falling back to the time column).
+	loadData := map[string]any{
+		"page":       0,
+		"per_page":   10,
+		"sort_by":    "time; DROP TABLE logs",
+		"sort_order": "desc; DROP TABLE logs",
+	}
+	body, _ := json.Marshal(loadData)
+	req := httptest.NewRequest(http.MethodPost,
+		"/admin/logs?action="+actionLoadLogs, bytes.NewBuffer(body))
+	resp := u.Handler(httptest.NewRecorder(), req)
+	if !strings.Contains(resp, "success") {
+		t.Fatalf("expected success with whitelisted sort, got %s", resp)
+	}
+	if !strings.Contains(resp, "Test Message 1") {
+		t.Error("expected logs returned")
+	}
+}

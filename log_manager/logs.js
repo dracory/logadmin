@@ -8,6 +8,9 @@ const { createApp } = Vue;
 const LogsApp = {
   data() {
     return {
+      // Endpoint URLs fetched via AJAX on mount (load-config-ajax)
+      urls: {},
+
       // UI state
       loading: true,
       deleting: false,
@@ -123,17 +126,61 @@ const LogsApp = {
     this.currentPage = parseInt(urlParams.get('page') || '0', 10);
     this.perPage = parseInt(urlParams.get('per_page') || '100', 10);
 
-    this.loadLogs();
+    // Fetch the endpoint URLs first — doubles as a connectivity
+    // check before the table loads.
+    this.loadConfig().then((ok) => {
+      if (ok) this.loadLogs();
+      else this.loading = false;
+    });
   },
 
   methods: {
+    /**
+     * Fetches the endpoint URLs from the config endpoint. The config
+     * URL is derived from the current page URL — routing is
+     * query-param based (?controller=log-manager), so the controller
+     * param is preserved and the action appended.
+     */
+    async loadConfig() {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const controller = params.get('controller');
+        const configUrl = window.location.pathname + '?' +
+          (controller ? 'controller=' + encodeURIComponent(controller) + '&' : '') +
+          'action=load-config-ajax';
+        const response = await fetch(configUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: '{}'
+        });
+        const data = await response.json();
+        if (data.status === 'success' && data.data?.urls) {
+          this.urls = data.data.urls;
+          return true;
+        }
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: data.message || 'Failed to load page configuration'
+        });
+      } catch (error) {
+        console.error('Error loading config:', error);
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: error.message || 'Failed to load page configuration'
+        });
+      }
+      return false;
+    },
+
     /**
      * Loads logs from the server based on current filters, pagination, and sorting.
      */
     async loadLogs() {
       this.loading = true;
       try {
-        const response = await fetch(urlLogsLoad, {
+        const response = await fetch(this.urls.load, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -232,7 +279,7 @@ const LogsApp = {
       if (!result.isConfirmed) return;
 
       try {
-        const response = await fetch(urlLogDelete, {
+        const response = await fetch(this.urls.delete, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -287,7 +334,7 @@ const LogsApp = {
 
       this.deleting = true;
       try {
-        const response = await fetch(urlLogDeleteSelected, {
+        const response = await fetch(this.urls.delete_selected, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -343,7 +390,7 @@ const LogsApp = {
       if (!result.isConfirmed) return;
 
       try {
-        const response = await fetch(urlLogDeleteAll, {
+        const response = await fetch(this.urls.delete_all, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -393,7 +440,7 @@ const LogsApp = {
      */
     async showContext(log) {
       try {
-        const response = await fetch(urlLogShowContext, {
+        const response = await fetch(this.urls.show_context, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
